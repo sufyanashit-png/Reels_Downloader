@@ -1,44 +1,23 @@
-import yt_dlp
-import sys
-import os
 import tempfile
 import glob
+import os
+from pytube import YouTube
 
 def download_youtube_video(url):
     temp_dir = tempfile.mkdtemp()
     try:
-        output_template = os.path.join(temp_dir, 'video.%(ext)s')
+        yt = YouTube(url)
+        stream = yt.streams.filter(progressive=True, file_extension='mp4').first()
         
-        options = {
-            'quiet': True,
-            'no_warnings': True,
-            'format': 'best[ext=mp4]/best',
-            'socket_timeout': 30,
-            'retries': 3,
-            'fragment_retries': 3,
-            'outtmpl': output_template,
-            'http_headers': {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-            },
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['web', 'mweb']
-                }
-            }
-        }
-
-        with yt_dlp.YoutubeDL(options) as ydl:
-            ydl.extract_info(url, download=True)
+        if not stream:
+            stream = yt.streams.get_highest_resolution()
         
-        files = glob.glob(os.path.join(temp_dir, '*'))
-        if not files:
-            raise Exception("No video file downloaded")
+        output_file = stream.download(output_path=temp_dir)
         
-        video_file = files[0]
-        with open(video_file, 'rb') as f:
+        with open(output_file, 'rb') as f:
             video_bytes = f.read()
         
-        os.remove(video_file)
+        os.remove(output_file)
         os.rmdir(temp_dir)
         
         return video_bytes
