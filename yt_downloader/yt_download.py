@@ -12,11 +12,19 @@ def download_youtube_video(url):
         options = {
             'quiet': True,
             'no_warnings': True,
-            'format': 'best',
+            'format': 'best[ext=mp4]/best',
             'socket_timeout': 30,
-            'retries': 5,
-            'fragment_retries': 5,
-            'outtmpl': output_template
+            'retries': 3,
+            'fragment_retries': 3,
+            'outtmpl': output_template,
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            },
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['web', 'mweb']
+                }
+            }
         }
 
         with yt_dlp.YoutubeDL(options) as ydl:
