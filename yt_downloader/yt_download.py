@@ -42,7 +42,7 @@ def download_youtube_video(url):
             },
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['web_embedded', 'web'],
+                    'player_client': ['ios', 'web_embedded', 'web'],
                     'skip': ['hls'],
                 }
             },
