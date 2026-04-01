@@ -1,10 +1,8 @@
-import tempfile
-import os
+import yt_dlp
 import sys
-import shutil
-from yt_dlp import YoutubeDL
-
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+import os
+import tempfile
+import glob
 
 def create_cookie_file():
     cookie_data = os.getenv("YOUTUBE_COOKIES")
@@ -16,58 +14,42 @@ def create_cookie_file():
     return None
 
 def download_youtube_video(url):
+    cookie_file = create_cookie_file()
     temp_dir = tempfile.mkdtemp()
-    temp_file = None
     try:
-        # Convert Shorts URL to regular YouTube URL
-        if 'youtube.com/shorts/' in url:
-            video_id = url.split('/shorts/')[1].split('?')[0]
-            url = f'https://www.youtube.com/watch?v={video_id}'
+        output_template = os.path.join(temp_dir, 'video.%(ext)s')
         
-        # Configure yt_dlp with cookies.txt
-        cookie_file = create_cookie_file()
-        ydl_opts = {
-            'format': 'best[ext=mp4]/best[ext=webm]/best',
-            'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
-            'quiet': False,
-            'no_warnings': False,
-            'user_agent': USER_AGENT,
-            'socket_timeout': 30,
+        options = {
+            'quiet': True,
+            'no_warnings': True,
+            'format': 'best',
             'cookiefile': cookie_file,
-            'http_headers': {
-                'User-Agent': USER_AGENT,
-                'Accept-Language': 'en-US,en;q=0.9',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Referer': 'https://www.youtube.com/',
-            },
-            'extractor_args': {
-                'youtube': {
-                    'player_client': ['ios', 'web_embedded', 'web'],
-                    'skip': [],
-                }
-            },
+            'socket_timeout': 30,
             'retries': 5,
             'fragment_retries': 5,
+            'outtmpl': output_template
         }
+
+        with yt_dlp.YoutubeDL(options) as ydl:
+            ydl.extract_info(url, download=True)
         
-        with YoutubeDL(ydl_opts) as ydl:
-            info = ydl.extract_info(url, download=True)
-            temp_file = ydl.prepare_filename(info)
+        files = glob.glob(os.path.join(temp_dir, '*'))
+        if not files:
+            raise Exception("No video file downloaded")
         
-        if not os.path.exists(temp_file):
-            raise Exception("Video file was not downloaded successfully")
-        
-        with open(temp_file, 'rb') as f:
+        video_file = files[0]
+        with open(video_file, 'rb') as f:
             video_bytes = f.read()
         
-        return video_bytes
+        os.remove(video_file)
+        os.rmdir(temp_dir)
         
+        return video_bytes
     except Exception as e:
-        raise Exception(f"YouTube download failed: {str(e)}")
-    finally:
-        # Cleanup temporary files and directory
+        import shutil
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
+        raise e
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
