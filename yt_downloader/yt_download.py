@@ -27,8 +27,7 @@ def download_youtube_video(url):
         # Configure yt_dlp with cookies.txt
         cookie_file = create_cookie_file()
         ydl_opts = {
-            'format': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best',
-            'merge_output_format': 'mp4',
+            'format': 'best[ext=mp4]/best[ext=webm]/best',
             'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
             'quiet': False,
             'no_warnings': False,
