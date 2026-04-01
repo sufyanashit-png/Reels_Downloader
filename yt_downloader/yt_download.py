@@ -43,7 +43,7 @@ def download_youtube_video(url):
             'extractor_args': {
                 'youtube': {
                     'player_client': ['ios', 'web_embedded', 'web'],
-                    'skip': ['hls'],
+                    'skip': [],
                 }
             },
             'retries': 5,
