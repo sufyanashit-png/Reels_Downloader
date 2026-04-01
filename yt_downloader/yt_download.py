@@ -1,31 +1,50 @@
 import tempfile
-import glob
 import os
-from pytube import YouTube
+import sys
+import shutil
+from yt_dlp import YoutubeDL
+
+# Modern user agent for YouTube requests
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
 def download_youtube_video(url):
     temp_dir = tempfile.mkdtemp()
+    temp_file = None
     try:
-        yt = YouTube(url)
-        stream = yt.streams.filter(progressive=True, file_extension='mp4').first()
+        # Convert Shorts URL to regular YouTube URL
+        if 'youtube.com/shorts/' in url:
+            video_id = url.split('/shorts/')[1].split('?')[0]
+            url = f'https://www.youtube.com/watch?v={video_id}'
         
-        if not stream:
-            stream = yt.streams.get_highest_resolution()
+        # Configure yt_dlp with user agent and output format
+        ydl_opts = {
+            'format': 'best[ext=mp4]/best',
+            'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
+            'quiet': False,
+            'no_warnings': False,
+            'user_agent': USER_AGENT,
+            'socket_timeout': 30,
+            'extractor_args': {'youtube': {'player_client': ['android']}},
+        }
         
-        output_file = stream.download(output_path=temp_dir)
+        with YoutubeDL(ydl_opts) as ydl:
+            info = ydl.extract_info(url, download=True)
+            temp_file = ydl.prepare_filename(info)
         
-        with open(output_file, 'rb') as f:
+        if not os.path.exists(temp_file):
+            raise Exception("Video file was not downloaded successfully")
+        
+        with open(temp_file, 'rb') as f:
             video_bytes = f.read()
         
-        os.remove(output_file)
-        os.rmdir(temp_dir)
-        
         return video_bytes
+        
     except Exception as e:
-        import shutil
+        raise Exception(f"YouTube download failed: {str(e)}")
+    finally:
+        # Cleanup temporary files and directory
         if os.path.exists(temp_dir):
             shutil.rmtree(temp_dir)
-        raise e
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
