@@ -16,14 +16,16 @@ def download_youtube_video(url):
             video_id = url.split('/shorts/')[1].split('?')[0]
             url = f'https://www.youtube.com/watch?v={video_id}'
         
-        # Configure yt_dlp without requiring browser cookies
+        # Configure yt_dlp with cookies.txt
         ydl_opts = {
             'format': 'best[ext=mp4]/best',
+            'merge_output_format': 'mp4',
             'outtmpl': os.path.join(temp_dir, '%(title)s.%(ext)s'),
             'quiet': False,
             'no_warnings': False,
             'user_agent': USER_AGENT,
             'socket_timeout': 30,
+            'cookiefile': 'cookies.txt',
             'http_headers': {
                 'User-Agent': USER_AGENT,
                 'Accept-Language': 'en-US,en;q=0.9',
@@ -32,12 +34,11 @@ def download_youtube_video(url):
             },
             'extractor_args': {
                 'youtube': {
-                    'player_client': ['web_embedded', 'web'],  # Use web client instead of android
-                    'skip': ['hls'],  # Skip age-gate bypass attempts
+                    'player_client': ['web_embedded', 'web'],
+                    'skip': ['hls'],
                 }
             },
-            'socket_timeout': 30,
-            'retries': 5,  # Retry up to 5 times on network failure
+            'retries': 5,
             'fragment_retries': 5,
         }
         
