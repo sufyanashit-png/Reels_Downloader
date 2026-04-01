@@ -4,8 +4,16 @@ import sys
 import shutil
 from yt_dlp import YoutubeDL
 
-# Modern user agent for YouTube requests
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64)..."
+
+def create_cookie_file():
+    cookie_data = os.getenv("YOUTUBE_COOKIES")
+    cookie_path = "/tmp/cookies.txt"
+    if cookie_data:
+        with open(cookie_path, "w") as f:
+            f.write(cookie_data)
+        return cookie_path
+    return None
 
 def download_youtube_video(url):
     temp_dir = tempfile.mkdtemp()
@@ -17,6 +25,7 @@ def download_youtube_video(url):
             url = f'https://www.youtube.com/watch?v={video_id}'
         
         # Configure yt_dlp with cookies.txt
+        cookie_file = create_cookie_file()
         ydl_opts = {
             'format': 'best[ext=mp4]/best',
             'merge_output_format': 'mp4',
@@ -25,7 +34,7 @@ def download_youtube_video(url):
             'no_warnings': False,
             'user_agent': USER_AGENT,
             'socket_timeout': 30,
-            'cookiefile': 'cookies.txt',
+            'cookiefile': cookie_file,
             'http_headers': {
                 'User-Agent': USER_AGENT,
                 'Accept-Language': 'en-US,en;q=0.9',
